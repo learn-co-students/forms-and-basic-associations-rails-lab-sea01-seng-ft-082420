@@ -5,15 +5,24 @@ class SongsController < ApplicationController
 
   def show
     @song = Song.find(params[:id])
+    @notes = Note.all.select{|n| n.song_id == @song.id}
   end
 
   def new
     @song = Song.new
   end
 
-  def create
-    @song = Song.new(song_params)
 
+
+  def create
+    @song = Song.create(song_params)
+    @song.artist = Artist.all.find{|a| a.name == params[:song][:artist_name]}
+    params[:notes].reject!{|n| n.empty?}
+    params[:notes].each do |note|
+      new_note = Note.create(:content =>note)
+      new_note[:song_id]=@song.id
+      new_note.save
+    end
     if @song.save
       redirect_to @song
     else
@@ -47,7 +56,15 @@ class SongsController < ApplicationController
   private
 
   def song_params
-    params.require(:song).permit(:title)
+    params.require(:song).permit(:title, :artist_id, :genre_id, :artist_name, :notes=> [])
+  end
+
+  def artist_params
+    params.require(:artist).permit(:name)
+  end
+
+  def note_params
+    params.require(:notes).permit( :song_id)
   end
 end
 
